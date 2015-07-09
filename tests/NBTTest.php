@@ -4,24 +4,22 @@ class NBTTest extends PHPUnit_Framework_TestCase {
     protected $nbt;
 
     public static function setUpBeforeClass() {
-        require 'nbt.class.php';
+        require_once 'nbt.class.php';
     }
 
     protected function setUp() {
         $this->nbt = new NBT();
-        //$this->nbt->verbose = true;
+        $this->nbt->verbose = true;
     }
 
     public function testLoadFile() {
-        $this->nbt->loadFile('smalltest.nbt');
+        $this->nbt->loadFile('tests/smalltest.nbt');
 
         $this->assertNotEmpty($this->nbt->root);
     }
 
     public function testNBTTypes() {
-        $this->nbt->loadFile('bigtest.nbt');
-
-        print_r($this->nbt->root[0]);
+        $this->nbt->loadFile('tests/bigtest.nbt');
 
         $root = $this->nbt->root[0];
         $values = $root['value'];
@@ -67,15 +65,15 @@ class NBTTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals(0.49312871321823, $values[10]['value']);
     }
 
-    /**
-     * @depends testLoadSmallNBT
-     * @depends testLoadBigNBT
-     */
-    public function testWriteFile() {
-        $this->nbt->loadFile('smalltest.nbt');
-        $this->nbt->loadFile('bigtest.nbt');
-        $this->nbt->writeFile($tmp = tempnam(sys_get_temp_dir(), 'nbt'));
 
+    public function testWriteFile() {
+        $this->nbt->loadFile('tests/smalltest.nbt');
+        $this->nbt->loadFile('tests/bigtest.nbt');
+
+        $tmp = tempnam(sys_get_temp_dir(), 'nbt');
+        $this->nbt->writeFile($tmp);
+
+        $this->assertNotFalse($tmp, 'Temp file could not be created.');
         $this->assertFileExists($tmp);
     }
 

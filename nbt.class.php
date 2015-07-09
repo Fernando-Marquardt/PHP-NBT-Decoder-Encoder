@@ -1,7 +1,7 @@
 <?php
 /**
  * Class for reading in NBT-format files.
- * 
+ *
  * @author  Justin Martin <frozenfire@thefrozenfire.com>
  * @version 1.0
  *
@@ -15,11 +15,16 @@ extension_loaded("gmp") or trigger_error (
 	"Execution will continue, but will halt if a 64-bit number is handled.", E_USER_NOTICE
 );
 
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
 class NBT {
 	public $root = array();
-	
+
 	public $verbose = false;
-	
+
+	private $logger;
+
 	const TAG_END = 0;
 	const TAG_BYTE = 1;
 	const TAG_SHORT = 2;
@@ -31,48 +36,73 @@ class NBT {
 	const TAG_STRING = 8;
 	const TAG_LIST = 9;
 	const TAG_COMPOUND = 10;
-	
+
 	public function loadFile($filename, $wrapper = "compress.zlib://") {
 		if(is_string($wrapper) && is_file($filename)) {
-			if($this->verbose) trigger_error("Loading file \"{$filename}\" with stream wrapper \"{$wrapper}\".", E_USER_NOTICE);
+			if ($this->verbose) {
+				$this->getLogger()->addInfo("Loading file \"{$filename}\" with stream wrapper \"{$wrapper}\".");
+			}
 			$fp = fopen("{$wrapper}{$filename}", "rb");
 		} elseif(is_null($wrapper) && is_resource($filename)) {
-			if($this->verbose) trigger_error("Loading file from existing resource.", E_USER_NOTICE);
+			if ($this->verbose) {
+				$this->getLogger()->addInfo("Loading file from existing resource.");
+			}
 			$fp = $filename;
 		} else {
+			$this->getLogger()->addWarning("First parameter must be a filename or a resource.");
 			trigger_error("First parameter must be a filename or a resource.", E_USER_WARNING);
 			return false;
 		}
-		if($this->verbose) trigger_error("Traversing first tag in file.", E_USER_NOTICE);
+		if ($this->verbose) {
+			$this->getLogger()->addInfo("Traversing first tag in file.");
+		}
 		$this->traverseTag($fp, $this->root);
-		if($this->verbose) trigger_error("Encountered end tag for first tag; finished.", E_USER_NOTICE);
+		if ($this->verbose) {
+			$this->getLogger()->addInfo("Encountered end tag for first tag; finished.");
+		}
 		return end($this->root);
 	}
-	
+
 	public function writeFile($filename, $wrapper = "compress.zlib://") {
 		if(is_string($wrapper)) {
-			if($this->verbose) trigger_error("Writing file \"{$filename}\" with stream wrapper \"{$wrapper}\".", E_USER_NOTICE);
+			if ($this->verbose) {
+				$this->getLogger()->addInfo("Writing file \"{$filename}\" with stream wrapper \"{$wrapper}\".");
+			}
 			$fp = fopen("{$wrapper}{$filename}", "wb");
 		} elseif(is_null($wrapper) && is_resource($fp)) {
-			if($this->verbose) trigger_error("Writing file to existing resource.", E_USER_NOTICE);
+			if ($this->verbose) {
+				$this->getLogger()->addInfo("Writing file to existing resource.");
+			}
 			$fp = $filename;
 		} else {
+			$this->getLogger()->addWarning("First parameter must be a filename or a resource.");
 			trigger_error("First parameter must be a filename or a resource.", E_USER_WARNING);
 			return false;
 		}
-		if($this->verbose) trigger_error("Writing ".count($this->root)." root tag(s) to file/resource.", E_USER_NOTICE);
-		foreach($this->root as $rootNum => $rootTag) if(!$this->writeTag($fp, $rootTag)) trigger_error("Failed to write root tag #{$rootNum} to file/resource.", E_USER_WARNING);
+		if ($this->verbose) {
+			$this->getLogger()->addInfo("Writing ".count($this->root)." root tag(s) to file/resource.");
+		}
+		foreach($this->root as $rootNum => $rootTag) {
+			if (!$this->writeTag($fp, $rootTag)) {
+				$this->getLogger()->addWarning("Failed to write root tag #{$rootNum} to file/resource.");
+				trigger_error("Failed to write root tag #{$rootNum} to file/resource.", E_USER_WARNING);
+			}
+		}
 		return true;
 	}
-	
+
 	public function purge() {
-		if($this->verbose) trigger_error("Purging all loaded data", E_USER_ERROR);
+		if ($this->verbose) {
+			$this->getLogger()->addError("Purging all loaded data");
+		}
 		$this->root = array();
 	}
-	
+
 	public function traverseTag($fp, &$tree) {
 		if(feof($fp)) {
-			if($this->verbose) trigger_error("Reached end of file/resource.", E_USER_NOTICE);
+			if ($this->verbose) {
+				$this->getLogger()->addInfo("Reached end of file/resource.");
+			}
 			return false;
 		}
 		$tagType = $this->readType($fp, self::TAG_BYTE); // Read type byte.
@@ -81,21 +111,23 @@ class NBT {
 		} else {
 			if($this->verbose) $position = ftell($fp);
 			$tagName = $this->readType($fp, self::TAG_STRING);
-			if($this->verbose) trigger_error("Reading tag \"{$tagName}\" at offset {$position}.", E_USER_NOTICE);
+			if ($this->verbose) {
+				$this->getLogger()->addInfo("Reading tag \"{$tagName}\" at offset {$position}.");
+			}
 			$tagData = $this->readType($fp, $tagType);
 			$tree[] = array("type"=>$tagType, "name"=>$tagName, "value"=>$tagData);
 			return true;
 		}
 	}
-	
+
 	public function writeTag($fp, $tag) {
 		if($this->verbose) {
 			$position = ftell($fp);
-			trigger_error("Writing tag \"{$tag["name"]}\" of type {$tag["type"]} at offset {$position}.", E_USER_NOTICE);
+			$this->getLogger()->addInfo("Writing tag \"{$tag["name"]}\" of type {$tag["type"]} at offset {$position}.");
 		}
 		return $this->writeType($fp, self::TAG_BYTE, $tag["type"]) && $this->writeType($fp, self::TAG_STRING, $tag["name"]) && $this->writeType($fp, $tag["type"], $tag["value"]);
 	}
-	
+
 	public function readType($fp, $tagType) {
 		switch($tagType) {
 			case self::TAG_BYTE: // Signed byte (8 bit)
@@ -137,7 +169,9 @@ class NBT {
 			case self::TAG_LIST: // List
 				$tagID = $this->readType($fp, self::TAG_BYTE);
 				$listLength = $this->readType($fp, self::TAG_INT);
-				if($this->verbose) trigger_error("Reading in list of {$listLength} tags of type {$tagID}.", E_USER_NOTICE);
+				if ($this->verbose) {
+					$this->getLogger()->addInfo("Reading in list of {$listLength} tags of type {$tagID}.");
+				}
 				$list = array("type"=>$tagID, "value"=>array());
 				for($i = 0; $i < $listLength; $i++) {
 					if(feof($fp)) break;
@@ -150,7 +184,7 @@ class NBT {
 				return $tree;
 		}
 	}
-	
+
 	public function writeType($fp, $tagType, $value) {
 		switch($tagType) {
 			case self::TAG_BYTE: // Signed byte (8 bit)
@@ -179,7 +213,9 @@ class NBT {
 				$value = utf8_encode($value);
 				return $this->writeType($fp, self::TAG_SHORT, strlen($value)) && is_int(fwrite($fp, $value));
 			case self::TAG_LIST: // List
-				if($this->verbose) trigger_error("Writing list of ".count($value["value"])." tags of type {$value["type"]}.", E_USER_NOTICE);
+				if ($this->verbose) {
+					$this->getLogger()->addInfo("Writing list of ".count($value["value"])." tags of type {$value["type"]}.");
+				}
 				if(!($this->writeType($fp, self::TAG_BYTE, $value["type"]) && $this->writeType($fp, self::TAG_INT, count($value["value"])))) return false;
 				foreach($value["value"] as $listItem) if(!$this->writeType($fp, $value["type"], $listItem)) return false;
 				return true;
@@ -188,6 +224,15 @@ class NBT {
 				if(!is_int(fwrite($fp, "\0"))) return false;
 				return true;
 		}
+	}
+
+	protected function getLogger() {
+		if ($this->logger === null) {
+			$this->logger = new Logger('NBT_Logger');
+			$this->logger->pushHandler(new StreamHandler('php://stdout', LOGGER::DEBUG));
+		}
+
+		return $this->logger;
 	}
 }
 ?>
