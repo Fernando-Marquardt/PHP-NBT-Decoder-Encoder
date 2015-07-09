@@ -1,0 +1,15 @@
+{
+    "name": "crafting-shards/nbt-decoder-encoder",
+    "type": "library",
+    "require-dev": {
+        "phpunit/phpunit": "^4.7"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Justin Martin",
+            "email": "frozenfire@thefrozenfire.com"
+        }
+    ],
+    "require": {}
+}
