@@ -1,4 +1,4 @@
-PHP NBT Decoder / Encoder
+PHP NBT Decoder / Encoder [![Build Status](https://travis-ci.org/crafting-shards/PHP-NBT-Decoder-Encoder.svg?branch=master)](https://travis-ci.org/crafting-shards/PHP-NBT-Decoder-Encoder)
 =========================
 
 A PHP-based NBT format decoder and encoder, for the Minecraft NBT format.  
