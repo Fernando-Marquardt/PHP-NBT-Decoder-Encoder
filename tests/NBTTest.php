@@ -9,7 +9,7 @@ class NBTTest extends PHPUnit_Framework_TestCase {
 
     protected function setUp() {
         $this->nbt = new NBT();
-        $this->nbt->verbose = true;
+        $this->nbt->setDebug(true);
     }
 
     public function testLoadFile() {
@@ -27,7 +27,7 @@ class NBTTest extends PHPUnit_Framework_TestCase {
         // Long
         $this->assertEquals(4, $values[0]['type']);
         $this->assertEquals('longTest', $values[0]['name']);
-        $this->assertEquals('9223372032559808511', $values[0]['value']);
+        $this->assertEquals('9223372036854775807', $values[0]['value']);
 
         // Short
         $this->assertEquals(2, $values[1]['type']);
@@ -42,7 +42,7 @@ class NBTTest extends PHPUnit_Framework_TestCase {
         // Float
         $this->assertEquals(5, $values[3]['type']);
         $this->assertEquals('floatTest', $values[3]['name']);
-        $this->assertEquals(0.49823147058487, $values[3]['value']);
+        $this->assertEquals(0.4982315, $values[3]['value'], '', 0.0000001);
 
         // Integer
         $this->assertEquals(3, $values[4]['type']);
@@ -62,7 +62,7 @@ class NBTTest extends PHPUnit_Framework_TestCase {
         // Double
         $this->assertEquals(6, $values[10]['type']);
         $this->assertEquals('doubleTest', $values[10]['name']);
-        $this->assertEquals(0.49312871321823, $values[10]['value']);
+        $this->assertEquals(0.493128713218231, $values[10]['value']);
     }
 
 
