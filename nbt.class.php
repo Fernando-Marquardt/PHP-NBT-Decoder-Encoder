@@ -14,7 +14,7 @@ use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
 class NBT {
-	public $root = array();
+	public $root = [];
 
 	private $logger;
 
@@ -72,7 +72,7 @@ class NBT {
 
 	public function purge() {
 		$this->getLogger()->addError("Purging all loaded data");
-		$this->root = array();
+		$this->root = [];
 	}
 
 	public function traverseTag($fp, &$tree) {
@@ -88,7 +88,7 @@ class NBT {
 			$position = ftell($fp);
 			$this->getLogger()->addInfo("Reading tag \"{$tagName}\" at offset {$position}.");
 			$tagData = $this->readType($fp, $tagType);
-			$tree[] = array("type"=>$tagType, "name"=>$tagName, "value"=>$tagData);
+			$tree[] = ['type' => $tagType, 'name' => $tagName, 'value' => $tagData];
 			return true;
 		}
 	}
@@ -122,7 +122,7 @@ class NBT {
 				return $value;
 			case self::TAG_BYTE_ARRAY: // Byte array
 				$arrayLength = $this->readType($fp, self::TAG_INT);
-				$array = array();
+				$array = [];
 				for($i = 0; $i < $arrayLength; $i++) $array[] = $this->readType($fp, self::TAG_BYTE);
 				return $array;
 			case self::TAG_STRING: // String
@@ -133,14 +133,14 @@ class NBT {
 				$tagID = $this->readType($fp, self::TAG_BYTE);
 				$listLength = $this->readType($fp, self::TAG_INT);
 				$this->getLogger()->addInfo("Reading in list of {$listLength} tags of type {$tagID}.");
-				$list = array("type"=>$tagID, "value"=>array());
+				$list = ['type' => $tagID, 'value' => []];
 				for($i = 0; $i < $listLength; $i++) {
 					if(feof($fp)) break;
 					$list["value"][] = $this->readType($fp, $tagID);
 				}
 				return $list;
 			case self::TAG_COMPOUND: // Compound
-				$tree = array();
+				$tree = [];
 				while($this->traverseTag($fp, $tree));
 				return $tree;
 		}
@@ -241,7 +241,7 @@ class NBT {
 			case self::TAG_DOUBLE: // Double value (64 bit, big endian, IEEE 754-2008)
 				return is_int(fwrite($fp, (pack('d', 1) == "\77\360\0\0\0\0\0\0")?pack('d', $value):strrev(pack('d', $value))));
 			case self::TAG_BYTE_ARRAY: // Byte array
-				return $this->writeType($fp, self::TAG_INT, count($value)) && is_int(fwrite($fp, call_user_func_array("pack", array_merge(array("c".count($value)), $value))));
+				return $this->writeType($fp, self::TAG_INT, count($value)) && is_int(fwrite($fp, call_user_func_array("pack", array_merge(['c'.count($value)], $value))));
 			case self::TAG_STRING: // String
 				$value = utf8_encode($value);
 				return $this->writeType($fp, self::TAG_SHORT, strlen($value)) && is_int(fwrite($fp, $value));
