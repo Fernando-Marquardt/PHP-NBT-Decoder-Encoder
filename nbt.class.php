@@ -2,11 +2,12 @@
 /**
  * Class for reading in NBT-format files.
  *
- * @author  Justin Martin <frozenfire@thefrozenfire.com>
- * @version 1.0
+ * @author Justin Martin <frozenfire@thefrozenfire.com>
+ * @author Fernando Marquardt <fernando.marquardt@gmail.com>
+ * @version 1.0.0
  *
  * Dependencies:
- *  PHP 4.3+ (5.3+ recommended)
+ *  PHP 5.4+
  *  On x32 systems: GMP or bcmath extensions
  */
 

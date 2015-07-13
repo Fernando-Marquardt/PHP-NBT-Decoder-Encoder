@@ -1,18 +1,35 @@
 {
     "name": "crafting-shards/nbt-decoder-encoder",
     "type": "library",
+    "description": "A PHP-based NBT format decoder and encoder, for the Minecraft NBT format.",
+    "keywords": ["nbt"],
+    "homepage": "https://github.com/crafting-shards/PHP-NBT-Decoder-Encoder",
+    "license": "MIT",
+    "support": {
+        "issues": "https://github.com/crafting-shards/PHP-NBT-Decoder-Encoder/issues"
+    },
     "require-dev": {
         "phpunit/phpunit": "^4.7",
         "monolog/monolog": "^1.14"
     },
-    "license": "MIT",
     "authors": [
         {
             "name": "Justin Martin",
             "email": "frozenfire@thefrozenfire.com"
+        },
+        {
+            "name": "Fernando Marquardt",
+            "email": "fernando.marquardt@gmail.com",
+            "role": "Developer"
         }
     ],
     "require": {
-        "php": ">=5.3"
+        "php": ">=5.4"
+    },
+    "autoload": {
+        "classmap": ["nbt.class.php"]
+    },
+    "autoload-dev": {
+        "classmap": ["tests/"]
     }
 }
