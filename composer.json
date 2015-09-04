@@ -27,7 +27,9 @@
         "php": ">=5.4"
     },
     "autoload": {
-        "classmap": ["nbt.class.php"]
+        "psr-4": {
+            "NBT\\": ""
+        }
     },
     "autoload-dev": {
         "classmap": ["tests/"]

@@ -11,6 +11,8 @@
  *  On x32 systems: GMP or bcmath extensions
  */
 
+namespace NBT;
+
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -32,17 +34,7 @@ class NBT {
 	const TAG_COMPOUND = 10;
 
 	public function loadFile($filename, $wrapper = "compress.zlib://") {
-		if(is_string($wrapper) && is_file($filename)) {
-			$this->getLogger()->addInfo("Loading file \"{$filename}\" with stream wrapper \"{$wrapper}\".");
-			$fp = fopen("{$wrapper}{$filename}", "rb");
-		} elseif(is_null($wrapper) && is_resource($filename)) {
-			$this->getLogger()->addInfo("Loading file from existing resource.");
-			$fp = $filename;
-		} else {
-			$this->getLogger()->addWarning("First parameter must be a filename or a resource.");
-			trigger_error("First parameter must be a filename or a resource.", E_USER_WARNING);
-			return false;
-		}
+		$fp = $this->getFileHandle($filename, $wrapper, 'rb');
 		$this->getLogger()->addInfo("Traversing first tag in file.");
 		$this->traverseTag($fp, $this->root);
 		$this->getLogger()->addInfo("Encountered end tag for first tag; finished.");
@@ -50,25 +42,31 @@ class NBT {
 	}
 
 	public function writeFile($filename, $wrapper = "compress.zlib://") {
-		if(is_string($wrapper)) {
-			$this->getLogger()->addInfo("Writing file \"{$filename}\" with stream wrapper \"{$wrapper}\".");
-			$fp = fopen("{$wrapper}{$filename}", "wb");
-		} elseif(is_null($wrapper) && is_resource($fp)) {
-			$this->getLogger()->addInfo("Writing file to existing resource.");
-			$fp = $filename;
-		} else {
-			$this->getLogger()->addWarning("First parameter must be a filename or a resource.");
-			trigger_error("First parameter must be a filename or a resource.", E_USER_WARNING);
-			return false;
-		}
-		$this->getLogger()->addInfo("Writing ".count($this->root)." root tag(s) to file/resource.");
-		foreach($this->root as $rootNum => $rootTag) {
+		$fp = $this->getFileHandle($filename, $wrapper, 'wb');
+		$this->getLogger()->addInfo("Writing " . count($this->root) . " root tag(s) to file/resource.");
+
+		foreach ($this->root as $rootNum => $rootTag) {
 			if (!$this->writeTag($fp, $rootTag)) {
 				$this->getLogger()->addWarning("Failed to write root tag #{$rootNum} to file/resource.");
 				trigger_error("Failed to write root tag #{$rootNum} to file/resource.", E_USER_WARNING);
 			}
 		}
 		return true;
+	}
+
+	private function getFileHandle($filename, $wrapper, $mode) {
+		if (is_string($wrapper)) {
+			$this->getLogger()->addInfo("Creating handle for the file \"{$filename}\" with stream wrapper \"{$wrapper}\".");
+			return fopen("{$wrapper}{$filename}", $mode);
+		} elseif (is_null($wrapper) && is_resource($filename)) {
+			$this->getLogger()->addInfo("Using existing file handle resource.");
+			return $filename;
+		}
+
+		$this->getLogger()->addWarning("First parameter must be a filename or a resource.");
+		trigger_error("First parameter must be a filename or a resource.", E_USER_WARNING);
+
+		return null;
 	}
 
 	public function purge() {
@@ -247,9 +245,18 @@ class NBT {
 				$value = utf8_encode($value);
 				return $this->writeType($fp, self::TAG_SHORT, strlen($value)) && is_int(fwrite($fp, $value));
 			case self::TAG_LIST: // List
-				$this->getLogger()->addInfo("Writing list of ".count($value["value"])." tags of type {$value["type"]}.");
-				if(!($this->writeType($fp, self::TAG_BYTE, $value["type"]) && $this->writeType($fp, self::TAG_INT, count($value["value"])))) return false;
-				foreach($value["value"] as $listItem) if(!$this->writeType($fp, $value["type"], $listItem)) return false;
+				$this->getLogger()->addInfo("Writing list of " . count($value["value"]) . " tags of type {$value["type"]}.");
+
+				if (!($this->writeType($fp, self::TAG_BYTE, $value['type']) && $this->writeType($fp, self::TAG_INT, count($value['value'])))) {
+					return false;
+				}
+
+				foreach ($value['value'] as $listItem) {
+					if (!$this->writeType($fp, $value['type'], $listItem)) {
+						return false;
+					}
+				}
+
 				return true;
 			case self::TAG_COMPOUND: // Compound
 				foreach($value as $listItem) if(!$this->writeTag($fp, $listItem)) return false;
@@ -277,4 +284,3 @@ class NBT {
 		return $this->logger;
 	}
 }
-?>

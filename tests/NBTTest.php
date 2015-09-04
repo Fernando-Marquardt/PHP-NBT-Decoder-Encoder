@@ -1,11 +1,9 @@
 <?php
+use NBT\NBT;
+
 class NBTTest extends PHPUnit_Framework_TestCase {
 
     protected $nbt;
-
-    public static function setUpBeforeClass() {
-        require_once 'nbt.class.php';
-    }
 
     protected function setUp() {
         $this->nbt = new NBT();
